@@ -1,5 +1,3 @@
-from numpy.lib.shape_base import _apply_along_axis_dispatcher
-from pandas.core.reshape.pivot import pivot
 import streamlit as st
 import pandas as pd
 
@@ -51,14 +49,28 @@ if file is not None:
 
     if to_filter:
         with st.expander("Filter", expanded=True):
-            filter_column = st.selectbox(
-                "Select column", df.columns, key="filter_column"
-            )
-            filter_value = st.multiselect(
-                "Select values", df[filter_column].unique(), key="filter_value"
+
+            filter_values_dict = {}
+            filter_columns = st.multiselect(
+                "Select columns", df.columns, key="filter_column"
             )
 
-        df = df[df[filter_column].isin(filter_value)]
+            if filter_columns:
+                for col in filter_columns:
+                    filter_values_dict[col] = st.multiselect(
+                        "Filter by %s" % col,
+                        df[col].unique(),
+                        key="filter_value_%s" % col,
+                    )
+
+            # filter_value = st.multiselect(
+            #     "Select values", df[filter_column].unique(), key="filter_value"
+            # )
+
+        for col in filter_columns:
+            df = df[df[col].isin(filter_values_dict[col])]
+
+        # df = df[df[filter_column].isin(filter_value)]
 
     to_pivot = st.checkbox("Pivot")
 
@@ -100,7 +112,19 @@ if file is not None:
         if to_filter:
             if filter_column and filter_value:
                 st.dataframe(df)
+
+                st.download_button(
+                    "Download dataframe",
+                    data=df.to_csv(index=False),
+                    file_name="dataframe.csv",
+                )
             else:
                 st.write("Please specify filters above :point_up:")
         else:
             st.dataframe(df)
+            st.download_button(
+                "Download dataset",
+                data=df.to_csv(index=False),
+                file_name="dataframe.csv",
+            )
+
